@@ -25,9 +25,9 @@ A real-time ride-hailing backend built with Node.js, Express, MongoDB, Redis, an
 ## Setup
 
 ### Prerequisites
-- Node.js (v18+)
-- MongoDB (local or Atlas)
-- Redis (local or cloud)
+- Node.js 
+- MongoDB 
+- Redis 
 
 ### Installation
 
