@@ -73,4 +73,6 @@ Open `http://localhost:3000` in your browser to access the UI.
 **Drop:** `28.5355, 77.3910` (Noida Sector 18)
 **Fare:** `250`
 
+## License
 
+ISC
