@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Uber Clone</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 16px;
+        }
+
+        .card h2 {
+            margin-bottom: 16px;
+            font-size: 20px;
+            color: #333;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #000;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.85;
+        }
+
+        .btn-primary {
+            background: #000;
+            color: #fff;
+        }
+
+        .btn-success {
+            background: #22c55e;
+            color: #fff;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: #fff;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: #fff;
+        }
+
+        .btn-sm {
+            width: auto;
+            padding: 8px 20px;
+            font-size: 14px;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            background: #fff;
+        }
+
+        .tab.active {
+            border-color: #000;
+            background: #000;
+            color: #fff;
+        }
+
+        .popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .popup-content {
+            background: #fff;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .popup-content h3 {
+            margin-bottom: 12px;
+            font-size: 22px;
+        }
+
+        .popup-content p {
+            margin-bottom: 8px;
+            color: #555;
+            font-size: 14px;
+        }
+
+        .popup-actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .status-bar {
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .status-success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-waiting {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .logout {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+        }
+
+        .ride-detail {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .ride-detail:last-child {
+            border: none;
+        }
+
+        .header {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .header h1 {
+            font-size: 28px;
+        }
+
+        .header p {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .error {
+            color: #ef4444;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .row input {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+
+        const { useState, useEffect, useRef } = React;
+        const API = '/api/v1';
+
+        function App() {
+            const [user, setUser] = useState(null);
+            const [token, setToken] = useState(null);
+            const [screen, setScreen] = useState('login');
+
+            const handleLogin = (userData, tkn) => {
+                setUser(userData);
+                setToken(tkn);
+                setScreen('dashboard');
+            };
+
+            const handleLogout = () => {
+                setUser(null);
+                setToken(null);
+                setScreen('login');
+            };
+
+            if (screen === 'login') return <AuthScreen onLogin={handleLogin} />;
+            if (user.role === 'passanger') return <PassengerDashboard user={user} token={token} onLogout={handleLogout} />;
+            return <DriverDashboard user={user} token={token} onLogout={handleLogout} />;
+        }
+
+        function AuthScreen({ onLogin }) {
+            const [isRegister, setIsRegister] = useState(false);
+            const [form, setForm] = useState({ name: '', email: '', password: '', role: 'passanger' });
+            const [error, setError] = useState('');
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setError('');
+                try {
+                    if (isRegister) {
+                        const res = await fetch(`${API}/users/register`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(form),
+                        });
+                        const data = await res.json();
+                        if (!data.success) throw new Error(data.error);
+                        setIsRegister(false);
+                        setError('');
+                        alert('Registered! Please login now.');
+                    } else {
+                        const res = await fetch(`${API}/users/login`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email: form.email, password: form.password }),
+                        });
+                        const data = await res.json();
+                        if (!data.success) throw new Error(data.error);
+                        onLogin(data.data.user, data.data.token);
+                    }
+                } catch (err) {
+                    setError(err.message);
+                }
+            };
+
+            return (
+                <div className="container">
+                    <div className="header">
+                        <h1>🚗 Uber Clone</h1>
+                        <p>{isRegister ? 'Create your account' : 'Sign in to continue'}</p>
+                    </div>
+                    <div className="card">
+                        <div className="tabs">
+                            <div className={`tab ${!isRegister ? 'active' : ''}`} onClick={() => setIsRegister(false)}>Login</div>
+                            <div className={`tab ${isRegister ? 'active' : ''}`} onClick={() => setIsRegister(true)}>Register</div>
+                        </div>
+                        {error && <div className="error">{error}</div>}
+                        <form onSubmit={handleSubmit}>
+                            {isRegister && (
+                                <input placeholder="Name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
+                            )}
+                            <input type="email" placeholder="Email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
+                            <input type="password" placeholder="Password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required />
+                            {isRegister && (
+                                <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
+                                    <option value="passanger">Passenger</option>
+                                    <option value="driver">Driver</option>
+                                </select>
+                            )}
+                            <button type="submit" className="btn btn-primary">{isRegister ? 'Register' : 'Login'}</button>
+                        </form>
+                    </div>
+                </div>
+            );
+        }
+
+        function PassengerDashboard({ user, token, onLogout }) {
+            const [socket, setSocket] = useState(null);
+            const [rideAccepted, setRideAccepted] = useState(null);
+            const [waiting, setWaiting] = useState(false);
+            const [form, setForm] = useState({ srcLat: '', srcLng: '', destLat: '', destLng: '', fare: '' });
+
+            useEffect(() => {
+                const s = io();
+                s.emit('registerPassenger', user._id);
+                s.on('rideAccepted', (data) => {
+                    setRideAccepted(data);
+                    setWaiting(false);
+                });
+                setSocket(s);
+                return () => s.disconnect();
+            }, []);
+
+            const requestRide = async (e) => {
+                e.preventDefault();
+                try {
+                    const res = await fetch(`${API}/bookings`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify({
+                            passangerId: user._id,
+                            source: { latitude: parseFloat(form.srcLat), longitude: parseFloat(form.srcLng) },
+                            destination: { latitude: parseFloat(form.destLat), longitude: parseFloat(form.destLng) },
+                            fare: parseFloat(form.fare),
+                        }),
+                    });
+                    const data = await res.json();
+                    if (!data.success) throw new Error(data.error);
+                    socket.emit('requestRide', {
+                        bookingId: data.data._id,
+                        passengerId: user._id,
+                        passengerName: user.name,
+                        source: data.data.source,
+                        destination: data.data.destination,
+                        fare: data.data.fare,
+                    });
+                    setWaiting(true);
+                } catch (err) {
+                    alert(err.message);
+                }
+            };
+
+            return (
+                <div className="container" style={{ position: 'relative' }}>
+                    <button className="btn btn-secondary btn-sm logout" onClick={onLogout}>Logout</button>
+                    <div className="header">
+                        <h1>🚗 Passenger</h1>
+                        <p>Welcome, {user.name}</p>
+                    </div>
+
+                    {rideAccepted && (
+                        <div className="popup">
+                            <div className="popup-content">
+                                <h3>🎉 Ride Accepted</h3>
+                                <p>Driver <strong>{rideAccepted.driverName}</strong> is on the way.</p>
+                                <p>Booking ID: {rideAccepted.bookingId}</p>
+                                <div className="popup-actions">
+                                    <button className="btn btn-primary btn-sm" onClick={() => setRideAccepted(null)}>OK</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {waiting && (
+                        <div className="status-bar status-waiting">⏳ Waiting for a driver to accept your ride...</div>
+                    )}
+
+                    <div className="card">
+                        <h2>Request a Ride</h2>
+                        <form onSubmit={requestRide}>
+                            <p style={{ fontSize: '13px', color: '#888', marginBottom: '8px' }}>Pickup Location</p>
+                            <div className="row">
+                                <input placeholder="Latitude" value={form.srcLat} onChange={e => setForm({ ...form, srcLat: e.target.value })} required />
+                                <input placeholder="Longitude" value={form.srcLng} onChange={e => setForm({ ...form, srcLng: e.target.value })} required />
+                            </div>
+                            <p style={{ fontSize: '13px', color: '#888', marginBottom: '8px' }}>Drop Location</p>
+                            <div className="row">
+                                <input placeholder="Latitude" value={form.destLat} onChange={e => setForm({ ...form, destLat: e.target.value })} required />
+                                <input placeholder="Longitude" value={form.destLng} onChange={e => setForm({ ...form, destLng: e.target.value })} required />
+                            </div>
+                            <input placeholder="Fare" type="number" value={form.fare} onChange={e => setForm({ ...form, fare: e.target.value })} required />
+                            <button type="submit" className="btn btn-primary" disabled={waiting}>
+                                {waiting ? 'Waiting...' : 'Request Ride'}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            );
+        }
+
+        function DriverDashboard({ user, token, onLogout }) {
+            const [socket, setSocket] = useState(null);
+            const [rideRequests, setRideRequests] = useState([]);
+            const [locForm, setLocForm] = useState({ latitude: '', longitude: '' });
+            const [locStatus, setLocStatus] = useState('');
+
+            useEffect(() => {
+                const s = io();
+                s.emit('registerDriver', user._id);
+                s.on('rideRequest', (data) => {
+                    setRideRequests(prev => {
+                        if (prev.find(r => r.bookingId === data.bookingId)) return prev;
+                        return [...prev, data];
+                    });
+                });
+                s.on('rideTaken', (data) => {
+                    setRideRequests(prev => prev.filter(r => r.bookingId !== data.bookingId));
+                });
+                setSocket(s);
+                return () => s.disconnect();
+            }, []);
+
+            const updateLocation = async (e) => {
+                e.preventDefault();
+                try {
+                    const res = await fetch(`${API}/driver/location`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify({ latitude: parseFloat(locForm.latitude), longitude: parseFloat(locForm.longitude) }),
+                    });
+                    const data = await res.json();
+                    if (!data.success) throw new Error(data.error);
+                    setLocStatus('Location updated!');
+                    setTimeout(() => setLocStatus(''), 3000);
+                } catch (err) {
+                    alert(err.message);
+                }
+            };
+
+            const acceptRide = async (request) => {
+                try {
+                    const res = await fetch(`${API}/driver/bookings/${request.bookingId}/accept`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    });
+                    const data = await res.json();
+                    if (!data.success) throw new Error(data.error);
+                    socket.emit('acceptRide', {
+                        bookingId: request.bookingId,
+                        passengerId: request.passengerId,
+                        driverId: user._id,
+                        driverName: user.name,
+                    });
+                    setRideRequests(prev => prev.filter(r => r.bookingId !== request.bookingId));
+                } catch (err) {
+                    alert(err.message);
+                }
+            };
+
+            const rejectRide = (request) => {
+                socket.emit('rejectRide', { bookingId: request.bookingId, driverId: user._id });
+                setRideRequests(prev => prev.filter(r => r.bookingId !== request.bookingId));
+            };
+
+            return (
+                <div className="container" style={{ position: 'relative' }}>
+                    <button className="btn btn-secondary btn-sm logout" onClick={onLogout}>Logout</button>
+                    <div className="header">
+                        <h1>🚗 Driver</h1>
+                        <p>Welcome, {user.name}</p>
+                    </div>
+
+                    <div className="card">
+                        <h2>Update Location</h2>
+                        {locStatus && <div className="status-bar status-success">{locStatus}</div>}
+                        <form onSubmit={updateLocation}>
+                            <div className="row">
+                                <input placeholder="Latitude" value={locForm.latitude} onChange={e => setLocForm({ ...locForm, latitude: e.target.value })} required />
+                                <input placeholder="Longitude" value={locForm.longitude} onChange={e => setLocForm({ ...locForm, longitude: e.target.value })} required />
+                            </div>
+                            <button type="submit" className="btn btn-primary">Update Location</button>
+                        </form>
+                    </div>
+
+                    {rideRequests.length === 0 && (
+                        <div className="status-bar status-info">📡 Listening for ride requests...</div>
+                    )}
+
+                    {rideRequests.map((req) => (
+                        <div className="popup" key={req.bookingId}>
+                            <div className="popup-content">
+                                <h3>🔔 New Ride Request</h3>
+                                <div style={{ textAlign: 'left', margin: '16px 0' }}>
+                                    <div className="ride-detail"><span>Passenger</span><span>{req.passengerName}</span></div>
+                                    <div className="ride-detail"><span>From</span><span>{req.source.latitude}, {req.source.longitude}</span></div>
+                                    <div className="ride-detail"><span>To</span><span>{req.destination.latitude}, {req.destination.longitude}</span></div>
+                                    <div className="ride-detail"><span>Fare</span><span>₹{req.fare}</span></div>
+                                </div>
+                                <div className="popup-actions">
+                                    <button className="btn btn-success btn-sm" onClick={() => acceptRide(req)}>Accept</button>
+                                    <button className="btn btn-danger btn-sm" onClick={() => rejectRide(req)}>Reject</button>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
