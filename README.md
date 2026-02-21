@@ -1,5 +1,3 @@
-# uber-backend
-
 # 🚗 Uber Clone Backend
 
 A real-time ride-hailing backend built with Node.js, Express, MongoDB, Redis, and Socket.IO. Includes a built-in React frontend served from the `public/` folder.
@@ -75,7 +73,4 @@ Open `http://localhost:3000` in your browser to access the UI.
 **Drop:** `28.5355, 77.3910` (Noida Sector 18)
 **Fare:** `250`
 
-## License
-
-ISC
 
