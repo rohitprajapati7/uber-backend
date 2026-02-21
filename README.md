@@ -52,8 +52,6 @@ REDIS_URL=redis://localhost:6379
 # Development (with hot reload)
 npm run dev
 
-# Production
-npm run local
 ```
 
 Open `http://localhost:3000` in your browser to access the UI.
@@ -73,6 +71,3 @@ Open `http://localhost:3000` in your browser to access the UI.
 **Drop:** `28.5355, 77.3910` (Noida Sector 18)
 **Fare:** `250`
 
-## License
-
-ISC
