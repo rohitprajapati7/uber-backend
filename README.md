@@ -24,18 +24,36 @@ A real-time ride-hailing backend built with Node.js, Express, MongoDB, Redis, an
 
 ## Setup
 
-### Prerequisites
-- Node.js 
-- MongoDB 
-- Redis 
+### Option 1: Docker (Recommended)
 
-### Installation
+The easiest way to get everything running. No need to install Node.js or Redis manually.
+
+**Prerequisites:** [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+
+```bash
+git clone <repo-url>
+cp .env.example .env   # fill in your values
+npm run docker:up       # starts app + redis
+```
+
+To stop:
+
+```bash
+npm run docker:down
+```
+
+Open `http://localhost:3000` in your browser to access the UI.
+
+### Option 2: Local Setup
+
+**Prerequisites:**
+- Node.js (v18+)
+- MongoDB (local or Atlas)
+- Redis (local or cloud)
 
 ```bash
 npm install
 ```
-
-### Environment Variables
 
 Create a `.env` file in the root:
 
@@ -46,12 +64,12 @@ JWT_SECRET=your_jwt_secret
 REDIS_URL=redis://localhost:6379
 ```
 
-### Run
-
 ```bash
 # Development (with hot reload)
 npm run dev
 
+# Production
+npm run local
 ```
 
 Open `http://localhost:3000` in your browser to access the UI.
@@ -71,3 +89,6 @@ Open `http://localhost:3000` in your browser to access the UI.
 **Drop:** `28.5355, 77.3910` (Noida Sector 18)
 **Fare:** `250`
 
+## License
+
+ISC

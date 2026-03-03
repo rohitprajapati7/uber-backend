@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node src/index.js",
     "local": "node src/index.js",
-    "dev": "npx nodemon src/index.js"
+    "dev": "npx nodemon src/index.js",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down"
   },
   "keywords": [],
   "author": "",
